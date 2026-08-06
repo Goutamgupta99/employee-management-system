@@ -1,14 +1,19 @@
 package com.goutam.ems.service.impl;
 
 import java.util.List;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.goutam.ems.constant.ApiStatus;
 import com.goutam.ems.constant.MessageConstants;
 import com.goutam.ems.dto.ApiResponse;
+import com.goutam.ems.dto.EmployeeRequestDto;
+import com.goutam.ems.dto.EmployeeResponseDto;
 import com.goutam.ems.entity.Employee;
 import com.goutam.ems.exception.EmployeeAlreadyExistsException;
 import com.goutam.ems.exception.EmployeeNotFoundException;
+import com.goutam.ems.mapper.EmployeeMapper;
 import com.goutam.ems.repository.EmployeeRepository;
 import com.goutam.ems.service.EmployeeService;
 
@@ -17,28 +22,28 @@ import com.goutam.ems.service.EmployeeService;
  * EmployeeServiceImpl
  * ============================================================================
  *
- * Responsibility: Contains all business logic related to Employee operations.
+ * PURPOSE ------- Contains all business logic related to Employee operations.
  *
- * Design Patterns Used: 1. Service Layer Pattern - Keeps business logic
+ * Responsibilities: - Validate business rules - Perform CRUD operations -
+ * Convert DTO <-> Entity using Mapper - Interact with Repository - Throw
+ * business exceptions when required
+ *
+ * DESIGN PATTERNS ---------------- ✔ Service Layer Pattern Business logic stays
  * separate from Controller.
  *
- * 2. Repository Pattern - Uses Spring Data JPA Repository for database
- * operations.
+ * ✔ Repository Pattern Repository communicates with the database.
  *
- * SOLID Principles: ✔ Single Responsibility Principle (SRP) -> Service contains
- * only business logic.
+ * ✔ Mapper Pattern Converts DTOs to Entity and Entity to DTO.
  *
- * ✔ Dependency Inversion Principle (DIP) -> Depends on EmployeeRepository
- * abstraction instead of database implementation.
+ * SOLID PRINCIPLES ---------------- ✔ SRP Service only contains business logic.
  *
- * ✔ DRY (Don't Repeat Yourself) -> Common methods like findEmployeeById() are
- * reused.
+ * ✔ DIP Depends on Repository abstraction rather than DB implementation.
  *
- * Flow: Controller ↓ EmployeeService ↓ EmployeeServiceImpl (Business Logic) ↓
- * EmployeeRepository ↓ PostgreSQL
+ * ✔ DRY Common methods like findEmployeeById() are reused.
  *
- * Future Improvements: - DTO Pattern - MapStruct Mapper - Transaction
- * Management - Caching - Logging - Security (JWT)
+ * APPLICATION FLOW ---------------- Client ↓ Controller ↓ Service ↓ Repository
+ * ↓ PostgreSQL
+ *
  * ============================================================================
  */
 @Service
@@ -47,44 +52,62 @@ public class EmployeeServiceImpl implements EmployeeService {
 	/**
 	 * Constructor Injection
 	 *
-	 * Spring injects EmployeeRepository automatically.
+	 * Spring automatically injects these dependencies.
 	 *
-	 * Principle: - Dependency Injection (DI) - Dependency Inversion Principle
-	 * (SOLID)
+	 * Why Constructor Injection? ✔ Immutable dependencies ✔ Easier Unit Testing ✔
+	 * Recommended by Spring
 	 *
-	 * Benefits: - Better Testability - Immutable Dependency (final) - Recommended
-	 * by Spring
+	 * Principle: Dependency Injection (DI) Dependency Inversion Principle (DIP)
 	 */
 	private final EmployeeRepository employeeRepository;
+	private final EmployeeMapper employeeMapper;
 
-	public EmployeeServiceImpl(EmployeeRepository employeeRepository) {
+	public EmployeeServiceImpl(EmployeeRepository employeeRepository, EmployeeMapper employeeMapper) {
+
 		this.employeeRepository = employeeRepository;
+		this.employeeMapper = employeeMapper;
 	}
 
 	/**
-	 * Save Employee
+	 * =========================================================================
+	 * CREATE EMPLOYEE
+	 * =========================================================================
 	 *
-	 * Steps: 1. Validate duplicate Employee Code & Email 2. Persist Employee
+	 * Steps ----- 1. Convert Request DTO -> Entity 2. Validate duplicate employee
+	 * 3. Save into database 4. Convert Entity -> Response DTO
 	 *
-	 * Principle: - Fail Fast - Single Responsibility Principle
+	 * Why @Transactional? ------------------- All database operations execute as
+	 * one transaction.
+	 *
+	 * If anything fails, Spring automatically rolls back the transaction.
+	 *
+	 * Pattern: Unit Of Work
+	 *
+	 * Principle: ACID Transaction
 	 */
+	@Transactional
 	@Override
-	public Employee saveEmployee(Employee employee) {
+	public EmployeeResponseDto saveEmployee(EmployeeRequestDto requestDto) {
 
-		validateDuplicateEmployee(employee);
+		Employee employee = employeeMapper.toEntity(requestDto);
 
-		return employeeRepository.save(employee);
+		validateDuplicateOnCreate(employee);
+
+		Employee savedEmployee = employeeRepository.save(employee);
+
+		return employeeMapper.toResponseDto(savedEmployee);
 	}
 
 	/**
-	 * Checks duplicate Employee Code & Email before saving.
+	 * Business Validation for CREATE.
 	 *
-	 * Why? Avoid database constraint violations and provide meaningful business
-	 * exceptions.
+	 * Checks: - Employee Code must be unique. - Email must be unique.
 	 *
-	 * Principle: - DRY - Encapsulation - Business Rule Validation
+	 * Why? ---- Prevent duplicate records before database insertion.
+	 *
+	 * Principle: Fail Fast
 	 */
-	private void validateDuplicateEmployee(Employee employee) {
+	private void validateDuplicateOnCreate(Employee employee) {
 
 		if (employeeRepository.existsByEmployeeCode(employee.getEmployeeCode())) {
 			throw new EmployeeAlreadyExistsException(MessageConstants.EMPLOYEE_CODE_EXISTS);
@@ -96,71 +119,96 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	/**
-	 * Fetch all Employees.
+	 * ========================================================================= GET
+	 * ALL EMPLOYEES
+	 * =========================================================================
 	 *
-	 * Repository Pattern
+	 * readOnly=true
+	 *
+	 * Since no INSERT/UPDATE/DELETE happens, Spring optimizes the transaction.
+	 *
+	 * Steps ----- Fetch all Employees Convert each Entity into Response DTO
 	 */
+	@Transactional(readOnly = true)
 	@Override
-	public List<Employee> getAllEmployees() {
-		return employeeRepository.findAll();
+	public List<EmployeeResponseDto> getAllEmployees() {
+
+		return employeeRepository.findAll().stream().map(employeeMapper::toResponseDto).toList();
 	}
 
 	/**
-	 * Fetch Employee by Id.
+	 * ========================================================================= GET
+	 * EMPLOYEE BY ID
+	 * =========================================================================
 	 *
-	 * Reuses common helper method instead of repeating logic.
+	 * Steps ----- 1. Find Employee 2. Convert Entity -> DTO
 	 *
 	 * Principle: DRY
 	 */
+	@Transactional(readOnly = true)
 	@Override
-	public Employee getEmployeeById(Long id) {
-		return findEmployeeById(id);
+	public EmployeeResponseDto getEmployeeById(Long id) {
+
+		return employeeMapper.toResponseDto(findEmployeeById(id));
 	}
 
 	/**
-	 * Update Employee.
+	 * =========================================================================
+	 * UPDATE EMPLOYEE
+	 * =========================================================================
 	 *
-	 * Steps: 1. Verify Employee exists 2. Validate duplicate fields if changed 3.
-	 * Update required fields 4. Save updated entity
+	 * Steps ----- 1. Fetch existing employee. 2. Validate duplicate values only if
+	 * changed. 3. Copy request data into managed entity. 4. Save updated entity. 5.
+	 * Return Response DTO.
 	 *
-	 * Principle: - DRY - Separation of Concerns - Business Rule Validation
+	 * Principle: Separation of Concerns
 	 */
+	@Transactional
 	@Override
-	public Employee updateEmployee(Long id, Employee employee) {
+	public EmployeeResponseDto updateEmployee(Long id, EmployeeRequestDto requestDto) {
 
 		Employee existingEmployee = findEmployeeById(id);
 
-		validateDuplicateOnUpdate(existingEmployee, employee);
+		validateDuplicateOnUpdate(existingEmployee, requestDto);
 
-		updateEmployeeFields(existingEmployee, employee);
+		employeeMapper.updateEntity(existingEmployee, requestDto);
 
-		return employeeRepository.save(existingEmployee);
+		Employee updatedEmployee = employeeRepository.save(existingEmployee);
+
+		return employeeMapper.toResponseDto(updatedEmployee);
 	}
 
 	/**
-	 * Delete Employee.
+	 * =========================================================================
+	 * DELETE EMPLOYEE
+	 * =========================================================================
 	 *
-	 * Steps: 1. Verify Employee exists 2. Delete Employee 3. Return Success
-	 * Response
+	 * Steps ----- 1. Verify employee exists. 2. Delete employee. 3. Return success
+	 * response.
 	 */
+	@Transactional
 	@Override
 	public ApiResponse deleteEmployee(Long id) {
 
-		Employee existingEmployee = findEmployeeById(id);
+		Employee employee = findEmployeeById(id);
 
-		employeeRepository.delete(existingEmployee);
+		employeeRepository.delete(employee);
 
 		return new ApiResponse(MessageConstants.EMPLOYEE_DELETED, ApiStatus.SUCCESS);
 	}
 
 	/**
-	 * Common helper method.
+	 * =========================================================================
+	 * COMMON HELPER METHOD
+	 * =========================================================================
 	 *
-	 * Fetch Employee by Id.
+	 * Fetch employee by ID.
 	 *
-	 * Why? Used by Get, Update and Delete APIs.
+	 * Used by: - GET - UPDATE - DELETE
 	 *
-	 * Principle: DRY (Don't Repeat Yourself)
+	 * Why? ---- Prevent duplicate code.
+	 *
+	 * Principle: DRY
 	 */
 	private Employee findEmployeeById(Long id) {
 
@@ -169,43 +217,31 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	/**
-	 * Copies request data into managed entity.
+	 * =========================================================================
+	 * UPDATE VALIDATION
+	 * =========================================================================
 	 *
-	 * Why? Prevents replacing managed JPA entity.
+	 * Duplicate validation happens ONLY if the user changed Employee Code or Email.
 	 *
-	 * Future: This method will be replaced with MapStruct Mapper.
-	 */
-	private void updateEmployeeFields(Employee existing, Employee updated) {
-
-		existing.setEmployeeCode(updated.getEmployeeCode());
-		existing.setFirstName(updated.getFirstName());
-		existing.setLastName(updated.getLastName());
-		existing.setEmail(updated.getEmail());
-		existing.setPhone(updated.getPhone());
-		existing.setDepartment(updated.getDepartment());
-		existing.setDesignation(updated.getDesignation());
-		existing.setSalary(updated.getSalary());
-		existing.setJoiningDate(updated.getJoiningDate());
-		existing.setStatus(updated.getStatus());
-	}
-
-	/**
-	 * Validates duplicate fields during Update.
+	 * Example -------
 	 *
-	 * Why? Duplicate validation should only happen when Employee Code or Email is
-	 * modified.
+	 * Existing Email: abc@gmail.com
 	 *
-	 * Example: Existing Email = abc@gmail.com Updated Email = abc@gmail.com
+	 * Updated Email: abc@gmail.com
 	 *
 	 * No validation required.
 	 *
-	 * Existing Email = abc@gmail.com Updated Email = xyz@gmail.com
+	 * ---------------------------
 	 *
-	 * Validate uniqueness.
+	 * Existing Email: abc@gmail.com
+	 *
+	 * Updated Email: xyz@gmail.com
+	 *
+	 * Check whether xyz@gmail.com already exists.
 	 *
 	 * Principle: Fail Fast
 	 */
-	private void validateDuplicateOnUpdate(Employee existing, Employee updated) {
+	private void validateDuplicateOnUpdate(Employee existing, EmployeeRequestDto updated) {
 
 		if (!existing.getEmployeeCode().equals(updated.getEmployeeCode())
 				&& employeeRepository.existsByEmployeeCode(updated.getEmployeeCode())) {
@@ -218,4 +254,5 @@ public class EmployeeServiceImpl implements EmployeeService {
 			throw new EmployeeAlreadyExistsException(MessageConstants.EMAIL_EXISTS);
 		}
 	}
+
 }

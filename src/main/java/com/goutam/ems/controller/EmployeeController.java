@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import com.goutam.ems.dto.ApiResponse;
 import com.goutam.ems.entity.Employee;
 import com.goutam.ems.exception.ErrorResponse;
 import com.goutam.ems.service.EmployeeService;
@@ -46,5 +47,11 @@ public class EmployeeController {
 	public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @Valid @RequestBody Employee employee) {
 		Employee updatedEmployee = employeeService.updateEmployee(id, employee);
 		return ResponseEntity.ok(updatedEmployee);
+	}
+	
+	@DeleteMapping("/{id}")
+	public ResponseEntity<ApiResponse> deleteEmployee(@PathVariable Long id) {
+		ApiResponse response = employeeService.deleteEmployee(id);
+		return ResponseEntity.ok(response);
 	}
 }

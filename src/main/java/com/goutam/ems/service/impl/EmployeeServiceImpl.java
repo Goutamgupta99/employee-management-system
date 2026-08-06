@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.goutam.ems.dto.ApiResponse;
 import com.goutam.ems.entity.Employee;
 import com.goutam.ems.exception.EmployeeNotFoundException;
 import com.goutam.ems.exception.ErrorResponse;
@@ -55,4 +56,20 @@ public class EmployeeServiceImpl implements EmployeeService {
 		existingEmployee.setStatus(employee.getStatus());
 		return employeeRepository.save(existingEmployee); 
 	}
+
+	@Override
+	public ApiResponse deleteEmployee(Long id) {
+
+		Employee existingEmployee = employeeRepository.findById(id)
+				.orElseThrow(() -> new EmployeeNotFoundException("Employee not found with id : " + id));
+
+		employeeRepository.delete(existingEmployee);
+
+		ApiResponse response = new ApiResponse();
+		response.setStatus("SUCCESS");
+		response.setMessage("Employee deleted successfully");
+
+		return response;
+	}
+	
 }

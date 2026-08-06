@@ -8,4 +8,7 @@ import com.goutam.ems.entity.Employee;
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
+	boolean existsByEmployeeCode(String employeeCode);
+
+	boolean existsByEmail(String email);
 }

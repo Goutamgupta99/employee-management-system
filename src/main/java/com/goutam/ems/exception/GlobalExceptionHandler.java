@@ -54,5 +54,21 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
+    
+    @ExceptionHandler(EmployeeAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateEmployeeFound(
+    		EmployeeAlreadyExistsException ex,
+            HttpServletRequest request) {
+
+        ErrorResponse error = new ErrorResponse();
+
+        error.setTimestamp(LocalDateTime.now());
+        error.setStatus(HttpStatus.CONFLICT.value());
+        error.setError(HttpStatus.CONFLICT.getReasonPhrase());
+        error.setMessage(ex.getMessage());
+        error.setPath(request.getRequestURI());
+
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
 
 }

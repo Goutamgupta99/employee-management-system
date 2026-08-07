@@ -7,10 +7,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import com.goutam.ems.dto.ApiResponse;
+import com.goutam.ems.dto.ApiResponseDto;
 import com.goutam.ems.dto.EmployeeRequestDto;
 import com.goutam.ems.dto.EmployeeResponseDto;
 import com.goutam.ems.service.EmployeeService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import jakarta.validation.Valid;
 
@@ -30,33 +37,23 @@ import jakarta.validation.Valid;
  * Design Patterns Used: 1. MVC (Model-View-Controller) -> Acts as the
  * Controller layer.
  *
- * 2. REST Controller Pattern -> Exposes RESTful endpoints using HTTP methods.
+ * 2. REST Controller Pattern -> Exposes RESTful endpoints.
  *
- * SOLID Principles: ✔ Single Responsibility Principle (SRP) -> Responsible only
- * for handling HTTP requests/responses.
+ * SOLID Principles: ✔ Single Responsibility Principle (SRP) -> Handles only
+ * HTTP requests/responses.
  *
  * ✔ Dependency Inversion Principle (DIP) -> Depends on EmployeeService
- * abstraction instead of implementation.
- *
- * Request Flow:
- *
- * Client │ ▼ EmployeeController │ ▼ EmployeeService │ ▼ EmployeeRepository │ ▼
- * PostgreSQL Database
- *
+ * abstraction.
  * ============================================================================
  */
 @RestController
 @RequestMapping("/api/employees")
 @Validated
+@Tag(name = "Employee Management", description = "REST APIs for Employee Management System")
 public class EmployeeController {
 
 	/**
 	 * Constructor Injection
-	 *
-	 * Spring injects EmployeeService automatically.
-	 *
-	 * Benefits: - Loose Coupling - Better Testability - Immutable Dependency
-	 * (final) - Recommended by Spring
 	 */
 	private final EmployeeService employeeService;
 
@@ -66,16 +63,12 @@ public class EmployeeController {
 
 	/**
 	 * Create Employee API
-	 *
-	 * HTTP Method: POST /api/employees
-	 *
-	 * Request: EmployeeRequestDto
-	 *
-	 * Response: EmployeeResponseDto
-	 *
-	 * Steps: 1. Accept request body. 2. Validate request using Bean Validation. 3.
-	 * Delegate processing to Service layer. 4. Return HTTP 201 (Created).
 	 */
+	@Operation(summary = "Create Employee", description = "Creates a new employee after validating duplicate Employee Code and Email.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "201", description = "Employee created successfully", content = @Content(schema = @Schema(implementation = EmployeeResponseDto.class))),
+			@ApiResponse(responseCode = "400", description = "Validation failed"),
+			@ApiResponse(responseCode = "409", description = "Employee already exists") })
 	@PostMapping
 	public ResponseEntity<EmployeeResponseDto> saveEmployee(@Valid @RequestBody EmployeeRequestDto employee) {
 
@@ -86,14 +79,9 @@ public class EmployeeController {
 
 	/**
 	 * Get All Employees API
-	 *
-	 * HTTP Method: GET /api/employees
-	 *
-	 * Response: List<EmployeeResponseDto>
-	 *
-	 * Steps: 1. Delegate request to Service. 2. Return list of employees. 3.
-	 * Respond with HTTP 200 (OK).
 	 */
+	@Operation(summary = "Get All Employees", description = "Retrieves all employees from the database.")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Employees fetched successfully") })
 	@GetMapping
 	public ResponseEntity<List<EmployeeResponseDto>> getAllEmployees() {
 
@@ -104,16 +92,11 @@ public class EmployeeController {
 
 	/**
 	 * Get Employee By Id API
-	 *
-	 * HTTP Method: GET /api/employees/{id}
-	 *
-	 * Path Variable: id
-	 *
-	 * Response: EmployeeResponseDto
-	 *
-	 * Steps: 1. Read employee id. 2. Delegate lookup to Service. 3. Return employee
-	 * details.
 	 */
+	@Operation(summary = "Get Employee By Id", description = "Retrieves employee details using employee id.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Employee found", content = @Content(schema = @Schema(implementation = EmployeeResponseDto.class))),
+			@ApiResponse(responseCode = "404", description = "Employee not found") })
 	@GetMapping("/{id}")
 	public ResponseEntity<EmployeeResponseDto> getEmployeeById(@PathVariable Long id) {
 
@@ -124,16 +107,13 @@ public class EmployeeController {
 
 	/**
 	 * Update Employee API
-	 *
-	 * HTTP Method: PUT /api/employees/{id}
-	 *
-	 * Request: EmployeeRequestDto
-	 *
-	 * Response: EmployeeResponseDto
-	 *
-	 * Steps: 1. Read employee id. 2. Validate request body. 3. Delegate update to
-	 * Service. 4. Return updated employee.
 	 */
+	@Operation(summary = "Update Employee", description = "Updates an existing employee.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Employee updated successfully", content = @Content(schema = @Schema(implementation = EmployeeResponseDto.class))),
+			@ApiResponse(responseCode = "400", description = "Validation failed"),
+			@ApiResponse(responseCode = "404", description = "Employee not found"),
+			@ApiResponse(responseCode = "409", description = "Duplicate Employee Code or Email") })
 	@PutMapping("/{id}")
 	public ResponseEntity<EmployeeResponseDto> updateEmployee(@PathVariable Long id,
 			@Valid @RequestBody EmployeeRequestDto employee) {
@@ -145,18 +125,15 @@ public class EmployeeController {
 
 	/**
 	 * Delete Employee API
-	 *
-	 * HTTP Method: DELETE /api/employees/{id}
-	 *
-	 * Response: ApiResponse
-	 *
-	 * Steps: 1. Read employee id. 2. Delegate delete operation to Service. 3.
-	 * Return success response.
 	 */
+	@Operation(summary = "Delete Employee", description = "Deletes an employee using employee id.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Employee deleted successfully", content = @Content(schema = @Schema(implementation = ApiResponseDto.class))),
+			@ApiResponse(responseCode = "404", description = "Employee not found") })
 	@DeleteMapping("/{id}")
-	public ResponseEntity<ApiResponse> deleteEmployee(@PathVariable Long id) {
+	public ResponseEntity<ApiResponseDto> deleteEmployee(@PathVariable Long id) {
 
-		ApiResponse response = employeeService.deleteEmployee(id);
+		ApiResponseDto response = employeeService.deleteEmployee(id);
 
 		return ResponseEntity.ok(response);
 	}

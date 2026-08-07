@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.goutam.ems.constant.ApiStatus;
 import com.goutam.ems.constant.MessageConstants;
-import com.goutam.ems.dto.ApiResponse;
+import com.goutam.ems.dto.ApiResponseDto;
 import com.goutam.ems.dto.EmployeeRequestDto;
 import com.goutam.ems.dto.EmployeeResponseDto;
 import com.goutam.ems.entity.Employee;
@@ -188,13 +188,13 @@ public class EmployeeServiceImpl implements EmployeeService {
 	 */
 	@Transactional
 	@Override
-	public ApiResponse deleteEmployee(Long id) {
+	public ApiResponseDto deleteEmployee(Long id) {
 
 		Employee employee = findEmployeeById(id);
 
 		employeeRepository.delete(employee);
 
-		return new ApiResponse(MessageConstants.EMPLOYEE_DELETED, ApiStatus.SUCCESS);
+		return new ApiResponseDto(MessageConstants.EMPLOYEE_DELETED, ApiStatus.SUCCESS);
 	}
 
 	/**

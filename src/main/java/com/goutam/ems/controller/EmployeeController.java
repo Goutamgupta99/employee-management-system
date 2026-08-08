@@ -27,6 +27,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.web.PageableDefault;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -64,10 +67,11 @@ public class EmployeeController {
 	@Operation(summary = "Get / Search Employees", description = "Retrieves employees with optional keyword search, pagination and sorting.")
 	@ApiResponses({ @ApiResponse(responseCode = "200", description = "Employees fetched successfully") })
 	@GetMapping
-	public ResponseEntity<PageResponseDto<EmployeeResponseDto>> getAllEmployees(
-			@RequestParam(required = false) String keyword, Pageable pageable) {
+	public ResponseEntity<PageResponseDto> getAllEmployees(@RequestParam(required = false) String keyword,
+			@ParameterObject @PageableDefault(page = 0, size = 10, sort = { "firstName",
+					"id" }, direction = Sort.Direction.ASC) Pageable pageable) {
 
-		PageResponseDto<EmployeeResponseDto> employees = employeeService.getAllEmployees(keyword, pageable);
+		PageResponseDto employees = employeeService.getAllEmployees(keyword, pageable);
 
 		return ResponseEntity.ok(employees);
 	}

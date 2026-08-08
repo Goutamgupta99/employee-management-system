@@ -20,48 +20,9 @@ import com.goutam.ems.mapper.EmployeeMapper;
 import com.goutam.ems.repository.EmployeeRepository;
 import com.goutam.ems.service.EmployeeService;
 
-/**
- * ============================================================================
- * EmployeeServiceImpl
- * ============================================================================
- *
- * PURPOSE ------- Contains all business logic related to Employee operations.
- *
- * Responsibilities: - Validate business rules - Perform CRUD operations -
- * Convert DTO <-> Entity using Mapper - Interact with Repository - Throw
- * business exceptions when required
- *
- * DESIGN PATTERNS ---------------- ✔ Service Layer Pattern Business logic stays
- * separate from Controller.
- *
- * ✔ Repository Pattern Repository communicates with the database.
- *
- * ✔ Mapper Pattern Converts DTOs to Entity and Entity to DTO.
- *
- * SOLID PRINCIPLES ---------------- ✔ SRP Service only contains business logic.
- *
- * ✔ DIP Depends on Repository abstraction rather than DB implementation.
- *
- * ✔ DRY Common methods like findEmployeeById() are reused.
- *
- * APPLICATION FLOW ---------------- Client ↓ Controller ↓ Service ↓ Repository
- * ↓ PostgreSQL
- *
- * ============================================================================
- */
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
 
-	/**
-	 * Constructor Injection
-	 *
-	 * Spring automatically injects these dependencies.
-	 *
-	 * Why Constructor Injection? ✔ Immutable dependencies ✔ Easier Unit Testing ✔
-	 * Recommended by Spring
-	 *
-	 * Principle: Dependency Injection (DI) Dependency Inversion Principle (DIP)
-	 */
 	private final EmployeeRepository employeeRepository;
 	private final EmployeeMapper employeeMapper;
 
@@ -72,21 +33,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	/**
-	 * =========================================================================
-	 * CREATE EMPLOYEE
-	 * =========================================================================
-	 *
-	 * Steps ----- 1. Convert Request DTO -> Entity 2. Validate duplicate employee
-	 * 3. Save into database 4. Convert Entity -> Response DTO
-	 *
-	 * Why @Transactional? ------------------- All database operations execute as
-	 * one transaction.
-	 *
-	 * If anything fails, Spring automatically rolls back the transaction.
-	 *
-	 * Pattern: Unit Of Work
-	 *
-	 * Principle: ACID Transaction
+	 * Creates a new employee after validating unique fields.
 	 */
 	@Transactional
 	@Override
@@ -102,13 +49,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	/**
-	 * Business Validation for CREATE.
-	 *
-	 * Checks: - Employee Code must be unique. - Email must be unique.
-	 *
-	 * Why? ---- Prevent duplicate records before database insertion.
-	 *
-	 * Principle: Fail Fast
+	 * Checks whether employee code or email already exists.
 	 */
 	private void validateDuplicateOnCreate(Employee employee) {
 
@@ -122,21 +63,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	/**
-	 * ============================================================================
-	 * GET ALL EMPLOYEES - PAGINATION
-	 * ============================================================================
-	 *
-	 * Fetches employees using pagination, sorting and optional search criteria.
-	 *
-	 * Spring Data returns a Page<Employee>.
-	 *
-	 * We convert that Page into our custom PageResponseDto so that Spring Data's
-	 * Page implementation is not exposed directly through the API.
-	 *
-	 * Pagination information returned: - Employee records for current page -
-	 * Current page number - Page size - Total number of employees - Total number of
-	 * pages - Whether this is the first page - Whether this is the last page
-	 * ============================================================================
+	 * Retrieves employees using optional keyword search, pagination and sorting.
 	 */
 	@Transactional(readOnly = true)
 	@Override
@@ -145,8 +72,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 		Page<Employee> employeePage;
 
 		if (keyword == null || keyword.isBlank()) {
+
 			employeePage = employeeRepository.findAll(pageable);
+
 		} else {
+
 			employeePage = employeeRepository.searchEmployees(keyword, pageable);
 		}
 
@@ -159,13 +89,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	/**
-	 * ========================================================================= GET
-	 * EMPLOYEE BY ID
-	 * =========================================================================
-	 *
-	 * Steps ----- 1. Find Employee 2. Convert Entity -> DTO
-	 *
-	 * Principle: DRY
+	 * Retrieves an employee by ID.
 	 */
 	@Transactional(readOnly = true)
 	@Override
@@ -175,15 +99,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	/**
-	 * =========================================================================
-	 * UPDATE EMPLOYEE
-	 * =========================================================================
-	 *
-	 * Steps ----- 1. Fetch existing employee. 2. Validate duplicate values only if
-	 * changed. 3. Copy request data into managed entity. 4. Save updated entity. 5.
-	 * Return Response DTO.
-	 *
-	 * Principle: Separation of Concerns
+	 * Updates an existing employee after validating duplicate employee code and
+	 * email.
 	 */
 	@Transactional
 	@Override
@@ -201,12 +118,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	/**
-	 * =========================================================================
-	 * DELETE EMPLOYEE
-	 * =========================================================================
-	 *
-	 * Steps ----- 1. Verify employee exists. 2. Delete employee. 3. Return success
-	 * response.
+	 * Deletes an employee by ID.
 	 */
 	@Transactional
 	@Override
@@ -220,17 +132,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	/**
-	 * =========================================================================
-	 * COMMON HELPER METHOD
-	 * =========================================================================
-	 *
-	 * Fetch employee by ID.
-	 *
-	 * Used by: - GET - UPDATE - DELETE
-	 *
-	 * Why? ---- Prevent duplicate code.
-	 *
-	 * Principle: DRY
+	 * Finds an employee by ID or throws an exception when the employee does not
+	 * exist.
 	 */
 	private Employee findEmployeeById(Long id) {
 
@@ -239,29 +142,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	/**
-	 * =========================================================================
-	 * UPDATE VALIDATION
-	 * =========================================================================
+	 * Validates duplicate fields during employee update.
 	 *
-	 * Duplicate validation happens ONLY if the user changed Employee Code or Email.
-	 *
-	 * Example -------
-	 *
-	 * Existing Email: abc@gmail.com
-	 *
-	 * Updated Email: abc@gmail.com
-	 *
-	 * No validation required.
-	 *
-	 * ---------------------------
-	 *
-	 * Existing Email: abc@gmail.com
-	 *
-	 * Updated Email: xyz@gmail.com
-	 *
-	 * Check whether xyz@gmail.com already exists.
-	 *
-	 * Principle: Fail Fast
+	 * Validation is performed only when the value has changed.
 	 */
 	private void validateDuplicateOnUpdate(Employee existing, EmployeeRequestDto updated) {
 
@@ -276,5 +159,4 @@ public class EmployeeServiceImpl implements EmployeeService {
 			throw new EmployeeAlreadyExistsException(MessageConstants.EMAIL_EXISTS);
 		}
 	}
-
 }

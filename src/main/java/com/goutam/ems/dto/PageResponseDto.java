@@ -7,41 +7,47 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * ============================================================================
- * PageResponseDto
- * ============================================================================
+ * Generic response wrapper for paginated API results.
  *
- * PURPOSE:
- * Custom response structure for paginated APIs.
- *
- * Instead of exposing Spring Data's Page object directly,
- * this DTO provides only the pagination information required
- * by the client.
- *
- * Benefits:
- * - Clean API response
- * - Better control over API contract
- * - Frontend-friendly structure
- * - Hides Spring Data implementation details
- * ============================================================================
+ * @param <T> type of data contained in the current page
  */
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class PageResponseDto<T> {
 
-    private List<T> content;
+	/**
+	 * Records belonging to the current page.
+	 */
+	private List<T> content;
 
-    private int pageNumber;
+	/**
+	 * Current page number. Starts from 0.
+	 */
+	private int pageNumber;
 
-    private int pageSize;
+	/**
+	 * Number of records requested per page.
+	 */
+	private int pageSize;
 
-    private long totalElements;
+	/**
+	 * Total number of records matching the query.
+	 */
+	private long totalElements;
 
-    private int totalPages;
+	/**
+	 * Total number of available pages.
+	 */
+	private int totalPages;
 
-    private boolean first;
+	/**
+	 * Indicates whether this is the first page.
+	 */
+	private boolean first;
 
-    private boolean last;
+	/**
+	 * Indicates whether this is the last page.
+	 */
+	private boolean last;
 }

@@ -1,13 +1,18 @@
 package com.goutam.ems.controller;
 
-import java.util.List;
-
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.goutam.ems.dto.ApiResponseDto;
 import com.goutam.ems.dto.EmployeeRequestDto;
@@ -16,49 +21,19 @@ import com.goutam.ems.dto.PageResponseDto;
 import com.goutam.ems.service.EmployeeService;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
-/**
- * ============================================================================
- * EmployeeController
- * ============================================================================
- *
- * Responsibility: Exposes REST APIs for Employee operations.
- *
- * The Controller acts as the entry point of the application. It accepts HTTP
- * requests from clients, delegates business logic to the Service layer, and
- * returns HTTP responses.
- *
- * It DOES NOT contain any business logic.
- *
- * Design Patterns Used: 1. MVC (Model-View-Controller) -> Acts as the
- * Controller layer.
- *
- * 2. REST Controller Pattern -> Exposes RESTful endpoints.
- *
- * SOLID Principles: ✔ Single Responsibility Principle (SRP) -> Handles only
- * HTTP requests/responses.
- *
- * ✔ Dependency Inversion Principle (DIP) -> Depends on EmployeeService
- * abstraction.
- * ============================================================================
- */
 @RestController
 @RequestMapping("/api/employees")
 @Validated
 @Tag(name = "Employee Management", description = "REST APIs for Employee Management System")
 public class EmployeeController {
 
-	/**
-	 * Constructor Injection
-	 */
 	private final EmployeeService employeeService;
 
 	public EmployeeController(EmployeeService employeeService) {
@@ -66,10 +41,10 @@ public class EmployeeController {
 	}
 
 	/**
-	 * Create Employee API
+	 * Creates a new employee.
 	 */
 	@Operation(summary = "Create Employee", description = "Creates a new employee after validating duplicate Employee Code and Email.")
-	@ApiResponses(value = {
+	@ApiResponses({
 			@ApiResponse(responseCode = "201", description = "Employee created successfully", content = @Content(schema = @Schema(implementation = EmployeeResponseDto.class))),
 			@ApiResponse(responseCode = "400", description = "Validation failed"),
 			@ApiResponse(responseCode = "409", description = "Employee already exists") })
@@ -82,49 +57,26 @@ public class EmployeeController {
 	}
 
 	/**
-	 * ============================================================================
-	 * GET / SEARCH EMPLOYEES API
-	 * ============================================================================
+	 * Retrieves employees with optional search, pagination and sorting.
 	 *
-	 * HTTP Method: GET /api/employees
-	 *
-	 * Supports: - Keyword search - Pagination - Sorting
-	 *
-	 * Examples:
-	 *
-	 * GET /api/employees
-	 *
-	 * GET /api/employees?keyword=java
-	 *
-	 * GET /api/employees?page=0&size=5
-	 *
-	 * GET /api/employees?keyword=java&page=0&size=5&sort=firstName,asc
-	 *
-	 * Keyword is optional.
-	 *
-	 * If keyword is not provided: → Returns all employees.
-	 *
-	 * If keyword is provided: → Searches employee-related fields.
-	 *
-	 * ============================================================================
+	 * Example: /api/employees?keyword=java&page=0&size=10&sort=firstName,asc
 	 */
 	@Operation(summary = "Get / Search Employees", description = "Retrieves employees with optional keyword search, pagination and sorting.")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Employees fetched successfully") })
+	@ApiResponses({ @ApiResponse(responseCode = "200", description = "Employees fetched successfully") })
 	@GetMapping
 	public ResponseEntity<PageResponseDto<EmployeeResponseDto>> getAllEmployees(
-	        @RequestParam(required = false) String keyword,Pageable pageable) {
+			@RequestParam(required = false) String keyword, Pageable pageable) {
 
-	    PageResponseDto<EmployeeResponseDto> employees =
-	            employeeService.getAllEmployees(keyword, pageable);
+		PageResponseDto<EmployeeResponseDto> employees = employeeService.getAllEmployees(keyword, pageable);
 
-	    return ResponseEntity.ok(employees);
+		return ResponseEntity.ok(employees);
 	}
 
 	/**
-	 * Get Employee By Id API
+	 * Retrieves an employee by ID.
 	 */
-	@Operation(summary = "Get Employee By Id", description = "Retrieves employee details using employee id.")
-	@ApiResponses(value = {
+	@Operation(summary = "Get Employee By Id", description = "Retrieves employee details using employee ID.")
+	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Employee found", content = @Content(schema = @Schema(implementation = EmployeeResponseDto.class))),
 			@ApiResponse(responseCode = "404", description = "Employee not found") })
 	@GetMapping("/{id}")
@@ -136,10 +88,10 @@ public class EmployeeController {
 	}
 
 	/**
-	 * Update Employee API
+	 * Updates an existing employee.
 	 */
 	@Operation(summary = "Update Employee", description = "Updates an existing employee.")
-	@ApiResponses(value = {
+	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Employee updated successfully", content = @Content(schema = @Schema(implementation = EmployeeResponseDto.class))),
 			@ApiResponse(responseCode = "400", description = "Validation failed"),
 			@ApiResponse(responseCode = "404", description = "Employee not found"),
@@ -154,10 +106,10 @@ public class EmployeeController {
 	}
 
 	/**
-	 * Delete Employee API
+	 * Deletes an employee by ID.
 	 */
-	@Operation(summary = "Delete Employee", description = "Deletes an employee using employee id.")
-	@ApiResponses(value = {
+	@Operation(summary = "Delete Employee", description = "Deletes an employee using employee ID.")
+	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Employee deleted successfully", content = @Content(schema = @Schema(implementation = ApiResponseDto.class))),
 			@ApiResponse(responseCode = "404", description = "Employee not found") })
 	@DeleteMapping("/{id}")

@@ -2,6 +2,8 @@ package com.goutam.ems.service.impl;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -119,21 +121,27 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	/**
-	 * ========================================================================= GET
-	 * ALL EMPLOYEES
-	 * =========================================================================
+	 * ============================================================================
+	 * GET ALL EMPLOYEES WITH PAGINATION
+	 * ============================================================================
 	 *
-	 * readOnly=true
+	 * Pageable contains: - Page number - Page size - Sorting information
 	 *
-	 * Since no INSERT/UPDATE/DELETE happens, Spring optimizes the transaction.
+	 * Example: page = 0 size = 10
 	 *
-	 * Steps ----- Fetch all Employees Convert each Entity into Response DTO
+	 * Repository returns only the required page instead of loading all employees
+	 * into memory.
+	 *
+	 * Design: - Pagination - Repository Pattern - DTO Pattern - Separation of
+	 * Concerns
+	 *
+	 * Performance Benefit: Avoids fetching thousands of records at once.
 	 */
 	@Transactional(readOnly = true)
 	@Override
-	public List<EmployeeResponseDto> getAllEmployees() {
-
-		return employeeRepository.findAll().stream().map(employeeMapper::toResponseDto).toList();
+	public Page<EmployeeResponseDto> getAllEmployees(Pageable pageable) {
+		Page<Employee> employeePage = employeeRepository.findAll(pageable);
+		return employeePage.map(employeeMapper::toResponseDto);
 	}
 
 	/**

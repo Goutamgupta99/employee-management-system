@@ -2,6 +2,8 @@ package com.goutam.ems.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -83,10 +85,8 @@ public class EmployeeController {
 	@Operation(summary = "Get All Employees", description = "Retrieves all employees from the database.")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Employees fetched successfully") })
 	@GetMapping
-	public ResponseEntity<List<EmployeeResponseDto>> getAllEmployees() {
-
-		List<EmployeeResponseDto> employees = employeeService.getAllEmployees();
-
+	public ResponseEntity<Page<EmployeeResponseDto>> getAllEmployees(Pageable pageable) {
+		Page<EmployeeResponseDto> employees = employeeService.getAllEmployees(pageable);
 		return ResponseEntity.ok(employees);
 	}
 

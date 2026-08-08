@@ -122,26 +122,47 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 	/**
 	 * ============================================================================
-	 * GET ALL EMPLOYEES WITH PAGINATION
+	 * GET ALL / SEARCH EMPLOYEES
 	 * ============================================================================
 	 *
-	 * Pageable contains: - Page number - Page size - Sorting information
+	 * Supports:
 	 *
-	 * Example: page = 0 size = 10
+	 * 1. Normal pagination 2. Sorting 3. Keyword search
 	 *
-	 * Repository returns only the required page instead of loading all employees
-	 * into memory.
+	 * Examples:
 	 *
-	 * Design: - Pagination - Repository Pattern - DTO Pattern - Separation of
-	 * Concerns
+	 * GET /api/employees
 	 *
-	 * Performance Benefit: Avoids fetching thousands of records at once.
+	 * GET /api/employees?page=0&size=5
+	 *
+	 * GET /api/employees?keyword=java
+	 *
+	 * GET /api/employees?keyword=java&page=0&size=5&sort=firstName,asc
+	 *
+	 * Business Flow:
+	 *
+	 * Controller ↓ Service ↓ Repository ↓ PostgreSQL
+	 *
+	 * If keyword is empty: → Fetch all employees
+	 *
+	 * If keyword is provided: → Search employees using keyword
+	 *
+	 * Pageable handles pagination and sorting.
+	 * ============================================================================
 	 */
 	@Transactional(readOnly = true)
 	@Override
-	public Page<EmployeeResponseDto> getAllEmployees(Pageable pageable) {
-		Page<Employee> employeePage = employeeRepository.findAll(pageable);
-		return employeePage.map(employeeMapper::toResponseDto);
+	public Page<EmployeeResponseDto> getAllEmployees(String keyword, Pageable pageable) {
+
+		Page<Employee> employees;
+		if (keyword == null || keyword.trim().isEmpty()) {
+			// No search keyword → fetch all employees
+			employees = employeeRepository.findAll(pageable);
+		} else {
+			// Search using the provided keyword
+			employees = employeeRepository.searchEmployees(keyword.trim(), pageable);
+		}
+		return employees.map(employeeMapper::toResponseDto);
 	}
 
 	/**

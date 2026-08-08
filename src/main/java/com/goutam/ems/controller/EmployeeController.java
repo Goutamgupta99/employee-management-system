@@ -15,6 +15,7 @@ import com.goutam.ems.dto.EmployeeResponseDto;
 import com.goutam.ems.service.EmployeeService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -80,13 +81,39 @@ public class EmployeeController {
 	}
 
 	/**
-	 * Get All Employees API
+	 * ============================================================================
+	 * GET / SEARCH EMPLOYEES API
+	 * ============================================================================
+	 *
+	 * HTTP Method: GET /api/employees
+	 *
+	 * Supports: - Keyword search - Pagination - Sorting
+	 *
+	 * Examples:
+	 *
+	 * GET /api/employees
+	 *
+	 * GET /api/employees?keyword=java
+	 *
+	 * GET /api/employees?page=0&size=5
+	 *
+	 * GET /api/employees?keyword=java&page=0&size=5&sort=firstName,asc
+	 *
+	 * Keyword is optional.
+	 *
+	 * If keyword is not provided: → Returns all employees.
+	 *
+	 * If keyword is provided: → Searches employee-related fields.
+	 *
+	 * ============================================================================
 	 */
-	@Operation(summary = "Get All Employees", description = "Retrieves all employees from the database.")
+	@Operation(summary = "Get / Search Employees", description = "Retrieves employees with optional keyword search, pagination and sorting.")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Employees fetched successfully") })
 	@GetMapping
-	public ResponseEntity<Page<EmployeeResponseDto>> getAllEmployees(Pageable pageable) {
-		Page<EmployeeResponseDto> employees = employeeService.getAllEmployees(pageable);
+	public ResponseEntity<Page<EmployeeResponseDto>> getAllEmployees(
+			@Parameter(description = "Optional search keyword. Searches employee code, name, email, department and designation.", example = "java") @RequestParam(required = false) String keyword,
+			Pageable pageable) {
+		Page<EmployeeResponseDto> employees = employeeService.getAllEmployees(keyword, pageable);
 		return ResponseEntity.ok(employees);
 	}
 

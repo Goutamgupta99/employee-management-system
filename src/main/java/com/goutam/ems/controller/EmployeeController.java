@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import com.goutam.ems.dto.ApiResponseDto;
 import com.goutam.ems.dto.EmployeeRequestDto;
 import com.goutam.ems.dto.EmployeeResponseDto;
+import com.goutam.ems.dto.PageResponseDto;
 import com.goutam.ems.service.EmployeeService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -110,11 +111,13 @@ public class EmployeeController {
 	@Operation(summary = "Get / Search Employees", description = "Retrieves employees with optional keyword search, pagination and sorting.")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Employees fetched successfully") })
 	@GetMapping
-	public ResponseEntity<Page<EmployeeResponseDto>> getAllEmployees(
-			@Parameter(description = "Optional search keyword. Searches employee code, name, email, department and designation.", example = "java") @RequestParam(required = false) String keyword,
-			Pageable pageable) {
-		Page<EmployeeResponseDto> employees = employeeService.getAllEmployees(keyword, pageable);
-		return ResponseEntity.ok(employees);
+	public ResponseEntity<PageResponseDto<EmployeeResponseDto>> getAllEmployees(
+	        @RequestParam(required = false) String keyword,Pageable pageable) {
+
+	    PageResponseDto<EmployeeResponseDto> employees =
+	            employeeService.getAllEmployees(keyword, pageable);
+
+	    return ResponseEntity.ok(employees);
 	}
 
 	/**

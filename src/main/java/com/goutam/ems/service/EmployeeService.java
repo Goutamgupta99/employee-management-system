@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import com.goutam.ems.dto.ApiResponseDto;
 import com.goutam.ems.dto.EmployeeRequestDto;
 import com.goutam.ems.dto.EmployeeResponseDto;
+import com.goutam.ems.dto.PageResponseDto;
 
 import jakarta.validation.Valid;
 
@@ -29,7 +30,7 @@ public interface EmployeeService {
 	/**
 	 * Retrieves employees with optional keyword search, pagination and sorting.
 	 */
-	Page<EmployeeResponseDto> getAllEmployees(String keyword, Pageable pageable);
+	PageResponseDto<EmployeeResponseDto> getAllEmployees(String keyword, Pageable pageable);
 
 	EmployeeResponseDto getEmployeeById(Long id);
 

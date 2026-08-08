@@ -12,6 +12,7 @@ import com.goutam.ems.constant.MessageConstants;
 import com.goutam.ems.dto.ApiResponseDto;
 import com.goutam.ems.dto.EmployeeRequestDto;
 import com.goutam.ems.dto.EmployeeResponseDto;
+import com.goutam.ems.dto.PageResponseDto;
 import com.goutam.ems.entity.Employee;
 import com.goutam.ems.exception.EmployeeAlreadyExistsException;
 import com.goutam.ems.exception.EmployeeNotFoundException;
@@ -122,47 +123,39 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 	/**
 	 * ============================================================================
-	 * GET ALL / SEARCH EMPLOYEES
+	 * GET ALL EMPLOYEES - PAGINATION
 	 * ============================================================================
 	 *
-	 * Supports:
+	 * Fetches employees using pagination, sorting and optional search criteria.
 	 *
-	 * 1. Normal pagination 2. Sorting 3. Keyword search
+	 * Spring Data returns a Page<Employee>.
 	 *
-	 * Examples:
+	 * We convert that Page into our custom PageResponseDto so that Spring Data's
+	 * Page implementation is not exposed directly through the API.
 	 *
-	 * GET /api/employees
-	 *
-	 * GET /api/employees?page=0&size=5
-	 *
-	 * GET /api/employees?keyword=java
-	 *
-	 * GET /api/employees?keyword=java&page=0&size=5&sort=firstName,asc
-	 *
-	 * Business Flow:
-	 *
-	 * Controller ↓ Service ↓ Repository ↓ PostgreSQL
-	 *
-	 * If keyword is empty: → Fetch all employees
-	 *
-	 * If keyword is provided: → Search employees using keyword
-	 *
-	 * Pageable handles pagination and sorting.
+	 * Pagination information returned: - Employee records for current page -
+	 * Current page number - Page size - Total number of employees - Total number of
+	 * pages - Whether this is the first page - Whether this is the last page
 	 * ============================================================================
 	 */
 	@Transactional(readOnly = true)
 	@Override
-	public Page<EmployeeResponseDto> getAllEmployees(String keyword, Pageable pageable) {
+	public PageResponseDto<EmployeeResponseDto> getAllEmployees(String keyword, Pageable pageable) {
 
-		Page<Employee> employees;
-		if (keyword == null || keyword.trim().isEmpty()) {
-			// No search keyword → fetch all employees
-			employees = employeeRepository.findAll(pageable);
+		Page<Employee> employeePage;
+
+		if (keyword == null || keyword.isBlank()) {
+			employeePage = employeeRepository.findAll(pageable);
 		} else {
-			// Search using the provided keyword
-			employees = employeeRepository.searchEmployees(keyword.trim(), pageable);
+			employeePage = employeeRepository.searchEmployees(keyword, pageable);
 		}
-		return employees.map(employeeMapper::toResponseDto);
+
+		List<EmployeeResponseDto> employees = employeePage.getContent().stream().map(employeeMapper::toResponseDto)
+				.toList();
+
+		return new PageResponseDto<>(employees, employeePage.getNumber(), employeePage.getSize(),
+				employeePage.getTotalElements(), employeePage.getTotalPages(), employeePage.isFirst(),
+				employeePage.isLast());
 	}
 
 	/**

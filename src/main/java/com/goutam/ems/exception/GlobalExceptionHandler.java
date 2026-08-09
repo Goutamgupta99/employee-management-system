@@ -10,34 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-/**
- * ============================================================================
- * GlobalExceptionHandler
- * ============================================================================
- *
- * Responsibility:
- * Handles all application exceptions in one central place.
- *
- * Instead of writing try-catch blocks inside every controller,
- * Spring automatically redirects exceptions here.
- *
- * Benefits:
- * - Cleaner Controllers
- * - Consistent Error Responses
- * - Centralized Exception Handling
- *
- * Design Pattern:
- * - Front Controller
- * - Exception Handler Pattern
- *
- * Spring Annotation:
- * @RestControllerAdvice
- *
- * ============================================================================
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -54,6 +30,51 @@ public class GlobalExceptionHandler {
 		error.setPath(request.getRequestURI());
 
 		return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+	}
+
+	@ExceptionHandler(EmployeeAlreadyExistsException.class)
+	public ResponseEntity<ErrorResponse> handleDuplicateEmployeeFound(EmployeeAlreadyExistsException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse error = new ErrorResponse();
+
+		error.setTimestamp(LocalDateTime.now());
+		error.setStatus(HttpStatus.CONFLICT.value());
+		error.setError(HttpStatus.CONFLICT.getReasonPhrase());
+		error.setMessage(ex.getMessage());
+		error.setPath(request.getRequestURI());
+
+		return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+	}
+
+	@ExceptionHandler(InvalidPaginationException.class)
+	public ResponseEntity<ErrorResponse> handleInvalidPagination(InvalidPaginationException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse error = new ErrorResponse();
+
+		error.setTimestamp(LocalDateTime.now());
+		error.setStatus(HttpStatus.BAD_REQUEST.value());
+		error.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
+		error.setMessage(ex.getMessage());
+		error.setPath(request.getRequestURI());
+
+		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler(InvalidSortFieldException.class)
+	public ResponseEntity<ErrorResponse> handleInvalidSortField(InvalidSortFieldException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse error = new ErrorResponse();
+
+		error.setTimestamp(LocalDateTime.now());
+		error.setStatus(HttpStatus.BAD_REQUEST.value());
+		error.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
+		error.setMessage(ex.getMessage());
+		error.setPath(request.getRequestURI());
+
+		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
@@ -77,19 +98,19 @@ public class GlobalExceptionHandler {
 		return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 	}
 
-	@ExceptionHandler(EmployeeAlreadyExistsException.class)
-	public ResponseEntity<ErrorResponse> handleDuplicateEmployeeFound(EmployeeAlreadyExistsException ex,
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex,
 			HttpServletRequest request) {
 
 		ErrorResponse error = new ErrorResponse();
 
 		error.setTimestamp(LocalDateTime.now());
-		error.setStatus(HttpStatus.CONFLICT.value());
-		error.setError(HttpStatus.CONFLICT.getReasonPhrase());
-		error.setMessage(ex.getMessage());
+		error.setStatus(HttpStatus.BAD_REQUEST.value());
+		error.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
+		error.setMessage("Invalid value for parameter: " + ex.getName());
 		error.setPath(request.getRequestURI());
 
-		return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(Exception.class)
@@ -105,5 +126,4 @@ public class GlobalExceptionHandler {
 
 		return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
-
 }

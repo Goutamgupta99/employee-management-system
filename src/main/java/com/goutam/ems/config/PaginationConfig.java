@@ -1,27 +1,18 @@
 package com.goutam.ems.config;
 
-import org.springframework.context.annotation.Bean;
+import java.util.Set;
+
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.config.PageableHandlerMethodArgumentResolverCustomizer;
 
 @Configuration
 public class PaginationConfig {
 
-	private static final int DEFAULT_PAGE_SIZE = 10;
-	private static final int MAX_PAGE_SIZE = 50;
+	public static final int DEFAULT_PAGE = 0;
 
-	@Bean
-	public PageableHandlerMethodArgumentResolverCustomizer pageableCustomizer() {
+	public static final int DEFAULT_PAGE_SIZE = 10;
 
-		return resolver -> {
+	public static final int MAX_PAGE_SIZE = 50;
 
-			resolver.setFallbackPageable(
-					PageRequest.of(0, DEFAULT_PAGE_SIZE, Sort.by(Sort.Direction.ASC, "firstName")));
-
-			resolver.setMaxPageSize(MAX_PAGE_SIZE);
-		};
-	}
+	public static final Set<String> ALLOWED_SORT_FIELDS = Set.of("firstName", "lastName", "email", "employeeCode",
+			"id");
 }

@@ -65,18 +65,15 @@ public class EmployeeServiceImpl implements EmployeeService {
 	/**
 	 * Retrieves employees using optional keyword search, pagination and sorting.
 	 */
-	@Transactional(readOnly = true)
 	@Override
+	@Transactional(readOnly = true)
 	public PageResponseDto<EmployeeResponseDto> getAllEmployees(String keyword, Pageable pageable) {
 
 		Page<Employee> employeePage;
 
 		if (keyword == null || keyword.isBlank()) {
-
 			employeePage = employeeRepository.findAll(pageable);
-
 		} else {
-
 			employeePage = employeeRepository.searchEmployees(keyword, pageable);
 		}
 

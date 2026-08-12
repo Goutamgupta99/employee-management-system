@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -111,6 +112,22 @@ public class GlobalExceptionHandler {
 		error.setPath(request.getRequestURI());
 
 		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+	}
+	
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+	        DataIntegrityViolationException ex,
+	        HttpServletRequest request) {
+
+	    ErrorResponse error = new ErrorResponse();
+
+	    error.setTimestamp(LocalDateTime.now());
+	    error.setStatus(HttpStatus.CONFLICT.value());
+	    error.setError(HttpStatus.CONFLICT.getReasonPhrase());
+	    error.setMessage("Employee data already exists");
+	    error.setPath(request.getRequestURI());
+
+	    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
 	}
 
 	@ExceptionHandler(Exception.class)

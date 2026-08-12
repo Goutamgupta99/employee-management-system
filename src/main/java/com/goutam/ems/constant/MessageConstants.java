@@ -12,4 +12,6 @@ public final class MessageConstants {
 	public static final String EMPLOYEE_NOT_FOUND = "Employee not found with id : ";
 
 	public static final String EMPLOYEE_DELETED = "Employee deleted successfully";
+	
+	public static final String PHONE_EXISTS = "Phone already exists";
 }

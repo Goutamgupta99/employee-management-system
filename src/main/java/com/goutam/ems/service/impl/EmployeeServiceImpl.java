@@ -60,6 +60,10 @@ public class EmployeeServiceImpl implements EmployeeService {
 		if (employeeRepository.existsByEmail(employee.getEmail())) {
 			throw new EmployeeAlreadyExistsException(MessageConstants.EMAIL_EXISTS);
 		}
+
+		if (employeeRepository.existsByPhone(employee.getPhone())) {
+			throw new EmployeeAlreadyExistsException(MessageConstants.PHONE_EXISTS);
+		}
 	}
 
 	/**
@@ -154,6 +158,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 		if (!existing.getEmail().equals(updated.getEmail()) && employeeRepository.existsByEmail(updated.getEmail())) {
 
 			throw new EmployeeAlreadyExistsException(MessageConstants.EMAIL_EXISTS);
+		}
+
+		if (!existing.getPhone().equals(updated.getPhone()) && employeeRepository.existsByPhone(updated.getPhone())) {
+
+			throw new EmployeeAlreadyExistsException(MessageConstants.PHONE_EXISTS);
 		}
 	}
 }
